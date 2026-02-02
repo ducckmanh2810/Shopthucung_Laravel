@@ -110,27 +110,27 @@
 
             <div class="footer__info-content">
                 <h3>Giới thiệu</h3>
-                <p>Bắt được con gì bán con đấy</p>
+                <p>GÌ CŨNG BÁN</p>
             </div>
 
 
 
             <div class="footer__info-content">
                 <h3>Thông tin liên hệ</h3>
-                <p>Địa chỉ: phường Dương Nội, quận Hà Đông, tp.Hà Nội </p>
-                <p>Email: bangqq0410@gmail.com</p>
-                <p>Sđt: 0865 774 896 / 0975 766 528 </p>
+                <p>Địa chỉ: phường Mộ Lao, quận Hà Đông, tp.Hà Nội </p>
+                <p>Email: phammanh28101109@gmail.com</p>
+                <p>Sđt: 0982 302 765 / 0769 168 547 </p>
             </div>
 
             <div class="footer__info-content">
                 <h3>Fanpage</h3>
-                <p>bangqq0410</p>
+                <p>Duckmanhh</p>
             </div>
 
         </div>
 
         <div class="footer__copyright">
-            <center> 2025 All rights reserved.</center>
+            <center> 2026 All rights reserved.</center>
         </div>
     </footer>
 

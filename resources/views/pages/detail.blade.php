@@ -99,9 +99,9 @@
             <div class="d-flex">
                 <img src="{{ asset('frontend/img/user.jpg')}}" width="45" height="45" style="border-radius: 50%;" />
                 <div class="pl-3">
-                    <b>Phạm Vĩnh Khang</b>
-                    <div style="line-height: 30px;">ok</div>
-                    <div>24/02/2025</div>
+                    <b>Phạm Hoàng Trang</b>
+                    <div style="line-height: 30px;">ok con dê.</div>
+                    <div>24/01/2026</div>
                 </div>
             </div>
 
