@@ -73,7 +73,7 @@
             @foreach(session('cart') as $id => $details)
             @php $total += $details['giakhuyenmai'] * $details['quantity'] @endphp
 
-            <tr data-id="{{ $id }}">
+            <tr data-id="{{ $id }}" data-price="{{ $details['giakhuyenmai'] }}">
                 <td><img src="{{ asset($details['anhsp']) }}" width="100" height="100" class="img-responsive" /></td>
                 <td>
                     <div>{{ $details['tensp'] }}</div>
@@ -85,12 +85,14 @@
 
                 <td data-th="Quantity" class="quantity-input">
                     <button class="quantity-btn decreaseValue">-</button>
-                    <input id="quantity" class="quantity-field quantity cart_update" type="number" min="1" max="999"
+                    <input class="quantity-field quantity cart_update" type="number" min="1" max="999"
                         value="{{$details['quantity']}}">
                     <button class="quantity-btn increaseValue">+</button>
                 </td>
 
-                <td data-th="" class="text-center">{{ $details['giakhuyenmai'] * $details['quantity'] }}đ</td>
+                <td data-th="" class="text-center item-subtotal">
+                    {{ $details['giakhuyenmai'] * $details['quantity'] }}đ
+                </td>
             </tr>
             @endforeach
             @endif
@@ -100,7 +102,7 @@
             <tr>
                 <td colspan="7" class="text-right">
                     <h3 class="d-flex justify-content-end align-items-center">
-                        Tổng thanh toán &nbsp;<div class="text-danger" style="font-size: 40px;">
+                        Tổng thanh toán &nbsp;<div id="cart-total" class="text-danger" style="font-size: 40px;">
                             {{ number_format($total, 0, ',', '.') }}đ</div>
                     </h3>
                 </td>
@@ -120,134 +122,129 @@
 </div>
 
 <script type="text/javascript">
-var decreaseValues = document.querySelectorAll('.decreaseValue');
-decreaseValues.forEach(function(decreaseValue) {
-    decreaseValue.addEventListener('click', function(e) {
+function clampNumber(value, min, max) {
+    var num = parseInt(value, 10);
+    if (isNaN(num)) {
+        num = min;
+    }
+    if (!isNaN(min) && num < min) {
+        num = min;
+    }
+    if (!isNaN(max) && num > max) {
+        num = max;
+    }
+    return num;
+}
 
-        e.preventDefault();
+function formatVnd(amount) {
+    return amount.toLocaleString('vi-VN') + 'đ';
+}
 
-        var quantitys = document.querySelectorAll('.quantity');
-        quantitys.forEach(function(quantity) {
-
-            var value = parseInt(quantity.value, 10);
-            var min = parseInt(quantity.getAttribute('min'),
-                10); // Lấy giá trị min từ thuộc tính min của quantity
-
-            // Nếu giá trị hiện tại không phải là giá trị tối thiểu
-            if (!isNaN(min) && value > min) {
-                value--; // Giảm giá trị
-                quantity.value = value; // Cập nhật giá trị của input
-            }
-        })
-
-        var ele = $(this);
-
-        $.ajax({
-            url: '{{ route('
-            update_cart ') }}',
-            method: "patch",
-            data: {
-                _token: '{{ csrf_token() }}',
-                id: ele.parents("tr").attr("data-id"),
-                quantity: ele.parents("tr").find(".quantity").val()
-            },
-            success: function(response) {
-                window.location.reload();
-            }
-        });
-
+function updateTotals() {
+    var total = 0;
+    document.querySelectorAll('#cart tbody tr').forEach(function(row) {
+        var price = parseInt(row.getAttribute('data-price'), 10) || 0;
+        var qtyInput = row.querySelector('.quantity');
+        var qty = parseInt(qtyInput.value, 10) || 0;
+        var subtotal = price * qty;
+        var subtotalCell = row.querySelector('.item-subtotal');
+        if (subtotalCell) {
+            subtotalCell.textContent = formatVnd(subtotal);
+        }
+        total += subtotal;
     });
-});
 
-var increaseValues = document.querySelectorAll('.increaseValue');
-increaseValues.forEach(function(increaseValue) {
-    increaseValue.addEventListener('click', function(e) {
-        e.preventDefault();
+    var totalEl = document.getElementById('cart-total');
+    if (totalEl) {
+        totalEl.textContent = formatVnd(total);
+    }
+}
 
-        var quantitys1 = document.querySelectorAll('.quantity');
-        quantitys1.forEach(function(quantity) {
-            var value = parseInt(quantity.value, 10);
-            value = isNaN(value) ? 1 : value;
-            value++;
-            quantity.value = value;
-        })
-
-        var ele1 = $(this);
-
-        $.ajax({
-            url: '{{ route('
-            update_cart ') }}',
-            method: "patch",
-            data: {
-                _token: '{{ csrf_token() }}',
-                id: ele1.parents("tr").attr("data-id"),
-                quantity: ele1.parents("tr").find(".quantity").val()
-            },
-            success: function(response) {
-                window.location.reload();
-            }
-        });
+function sendUpdate(row, qty) {
+    $.ajax({
+        url: '{{ route('update_cart') }}',
+        method: "patch",
+        data: {
+            _token: '{{ csrf_token() }}',
+            id: row.getAttribute('data-id'),
+            quantity: qty
+        },
+        success: function() {
+            updateTotals();
+        }
     });
-});
+}
 
-var cart_updates = document.querySelectorAll('.cart_update');
-cart_updates.forEach(function(cart_update) {
+var cartTable = document.getElementById('cart');
+if (cartTable) {
+    cartTable.addEventListener('click', function(e) {
+        var decreaseBtn = e.target.closest('.decreaseValue');
+        var increaseBtn = e.target.closest('.increaseValue');
+        var removeBtn = e.target.closest('.cart_remove');
 
-    cart_update.addEventListener('change', function(e) {
-        e.preventDefault();
-
-        var value = parseInt(this.value, 10); // Lấy giá trị nhập vào
-        var min = parseInt(this.getAttribute('min'), 10); // Lấy giá trị min
-        var max = parseInt(this.getAttribute('max'), 10); // Lấy giá trị max
-
-        // Kiểm tra nếu giá trị nhập vào nhỏ hơn min hoặc lớn hơn max
-        if (isNaN(value) || value < min) {
-            this.value = min; // Thiết lập giá trị là min
-        } else if (value > max) {
-            this.value = max; // Thiết lập giá trị là max
+        if (!decreaseBtn && !increaseBtn && !removeBtn) {
+            return;
         }
 
-        var ele = $(this);
-
-        $.ajax({
-            url: '{{ route('
-            update_cart ') }}',
-            method: "patch",
-            data: {
-                _token: '{{ csrf_token() }}',
-                id: ele.parents("tr").attr("data-id"),
-                quantity: ele.parents("tr").find(".quantity").val()
-            },
-            success: function(response) {
-                window.location.reload();
-            }
-        });
-    });
-})
-
-var cart_removes = document.querySelectorAll('.cart_remove');
-cart_removes.forEach(function(cart_remove) {
-    cart_remove.addEventListener('click', function(e) {
         e.preventDefault();
 
-        var ele3 = $(this);
-
-        if (confirm("Bạn có thật sự muốn xóa?")) {
-            $.ajax({
-                url: '{{ route('
-                remove_from_cart ') }}',
-                method: "DELETE",
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    id: ele3.parents("tr").attr("data-id")
-                },
-                success: function(response) {
-                    window.location.reload();
-                }
-            });
+        var row = e.target.closest('tr');
+        if (!row) {
+            return;
         }
-    })
-})
+
+        if (removeBtn) {
+            if (confirm("Bạn có thật sự muốn xóa?")) {
+                $.ajax({
+                    url: '{{ route('remove_from_cart') }}',
+                    method: "DELETE",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        id: row.getAttribute('data-id')
+                    },
+                    success: function() {
+                        row.remove();
+                        updateTotals();
+                    }
+                });
+            }
+            return;
+        }
+
+        var qtyInput = row.querySelector('.quantity');
+        if (!qtyInput) {
+            return;
+        }
+
+        var min = parseInt(qtyInput.getAttribute('min'), 10);
+        var max = parseInt(qtyInput.getAttribute('max'), 10);
+        var current = clampNumber(qtyInput.value, min, max);
+        var next = current + (increaseBtn ? 1 : -1);
+        next = clampNumber(next, min, max);
+        qtyInput.value = next;
+
+        sendUpdate(row, next);
+    });
+
+    cartTable.addEventListener('change', function(e) {
+        var input = e.target.closest('.cart_update');
+        if (!input) {
+            return;
+        }
+
+        var row = input.closest('tr');
+        if (!row) {
+            return;
+        }
+
+        var min = parseInt(input.getAttribute('min'), 10);
+        var max = parseInt(input.getAttribute('max'), 10);
+        var next = clampNumber(input.value, min, max);
+        input.value = next;
+
+        sendUpdate(row, next);
+    });
+}
 </script>
 
 @endsection
